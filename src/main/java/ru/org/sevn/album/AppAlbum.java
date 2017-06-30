@@ -29,7 +29,7 @@ public class AppAlbum {
         	}
         }
         if (IM_PATH == null) {
-        	IM_PATH = new File("C:/Portable/progs/ImageMagick-7.0.5-2-portable-Q16-x64");
+        	IM_PATH = new File("D:/Portable/Portable/PortableApps/ImageMagick-7.0.6-0-portable-Q16-x86");
         }
         MainFrame.runMain(IM_PATH);
     }
