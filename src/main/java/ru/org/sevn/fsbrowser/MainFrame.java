@@ -15,50 +15,18 @@
  *******************************************************************************/
 package ru.org.sevn.fsbrowser;
 
-import java.awt.BorderLayout;
-import java.awt.Point;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
-import javax.swing.JTable;
-import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.table.TableCellRenderer;
-import ru.org.sevn.common.mime.Mime;
 import ru.org.sevn.utilwt.FileCommenter;
 
-import ru.org.sevn.utilwt.FileListItemContainer;
-import ru.org.sevn.utilwt.FileTableCellRenderer;
-import ru.org.sevn.utilwt.FileTableModel;
-import ru.org.sevn.utilwt.FileTableModel.RowCol;
-import ru.org.sevn.utilwt.ImagePreview;
-import ru.org.sevn.utilwt.ImageUtil;
 
 public class MainFrame extends JFrame {
 
-    private JTable table;
-    private final Point tableSelected = new Point();
-    private final JLabel status = new JLabel();
-    private ImagePreview imagePreview;
+    private FilePane leftPane;
+    private FilePane rightPane;
     
     public static void runMain(final FileCommenter commenter) {
         SwingUtilities.invokeLater(new Runnable() {
@@ -80,7 +48,15 @@ public class MainFrame extends JFrame {
                 System.exit(0);
             }
         });
-        createFileTable(commenter);
+        leftPane = new FilePane(commenter);
+        rightPane = new FilePane(commenter);
+        final JSplitPane mainPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,leftPane, rightPane);
+        mainPane.setOneTouchExpandable(true);
+        setContentPane(mainPane);
+        mainPane.setDividerLocation(.5);
+        
+        setContentPane(mainPane);
+        //createFileTable(commenter);
         //main folder button
         //folder list
         //full screen
@@ -91,187 +67,7 @@ public class MainFrame extends JFrame {
 
     public void showFrame() {
         setVisible(true);
-        table.setColumnSelectionInterval(0, 0);
-        table.setRowSelectionInterval(0, 0);
+        leftPane.onVisible();
+        rightPane.onVisible();
     }
-
-    private void selectedTableItem(FileListItemContainer fval) {
-        if (fval != null) {
-            if (fval.getFile() != null && !Files.isDirectory(fval.getFile())) {
-                ImageIcon ii = null;
-                String contentType = Mime.getMimeTypePath(fval.getFile().getFileName());
-                if (contentType != null && contentType.startsWith("image")) {
-                    try {
-                        ii = new ImageIcon(Files.readAllBytes(fval.getFile()));
-                    } catch (IOException ex) {
-                        Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-                // TODO check last displayed
-                if (ii != null && ii.getImage() != null) {
-                    imagePreview.setImageIconRepaint(ii, fval.getFile());
-                } else {
-                    imagePreview.setImageIconRepaint(null, fval.getFile());
-                }
-            } else {
-                imagePreview.setImageIconRepaint(null, fval.getFile());
-            }
-        }
-
-    }
-    
-    private static int getLastSelected(ListSelectionEvent e) {
-        ListSelectionModel lmodel = (ListSelectionModel)e.getSource();
-        int idx = e.getFirstIndex();
-        if (lmodel.isSelectedIndex(e.getLastIndex())) {
-            idx = e.getLastIndex();
-        }
-        return idx;
-    }
-    private void onUpdateSelection() {
-        FileListItemContainer fval = (FileListItemContainer) table.getValueAt(tableSelected.y, tableSelected.x);
-        if (fval != null) {
-            status.setText(fval.getToolTipText());
-        } else {
-            status.setText("");
-        }
-        selectedTableItem(fval);
-    }
-    private void onEnterSelection() {
-        onEnterSelection((FileListItemContainer) table.getValueAt(tableSelected.y, tableSelected.x));
-    }
-    private void enterDir(Path fl) {
-        if (fl == null || fl != null && Files.isDirectory(fl)) {
-            tableSelected.x = 0;
-            tableSelected.y = 0;            
-            final FileTableModel tableModel = (FileTableModel)table.getModel();
-            tableModel.setCurrentDir(fl);
-            tableModel.fireTableDataChanged();
-            table.setColumnSelectionInterval(0, 0);
-            table.setRowSelectionInterval(0, 0);
-        }
-    }
-    private void onEnterSelection(FileListItemContainer fval) {
-        if (fval != null) {
-            enterDir(fval.getFile());
-        }
-    }
-    private void createFileTable(FileCommenter commenter) {
-        //https://docs.oracle.com/javase/tutorial/uiswing/components/table.html
-        imagePreview = new ImagePreview(commenter);
-
-        final FileTableModel tableModel = new FileTableModel(new File(System.getProperty("user.home")).toPath(), 4, null);
-        final TableCellRenderer cellRenderer = new FileTableCellRenderer();
-        table = new JTable(tableModel) {
-            public TableCellRenderer getCellRenderer(int row, int column) {
-                return cellRenderer;
-            }
-        };
-        table.setRowHeight(64 + 32);
-        table.setShowGrid(false);
-        table.setTableHeader(null);
-        //table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        table.getColumnModel().getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-            @Override
-            public void valueChanged(ListSelectionEvent e) {
-                if (!e.getValueIsAdjusting()) {
-                    tableSelected.x = getLastSelected(e);
-                    onUpdateSelection();
-                }
-            }
-        });
-        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-            @Override
-            public void valueChanged(ListSelectionEvent e) {
-                if (!e.getValueIsAdjusting()) {
-                    tableSelected.y = getLastSelected(e);
-                    onUpdateSelection();
-                }
-            }
-        });
-        table.setCellSelectionEnabled(true);
-        JScrollPane scrollPane = new JScrollPane(table);
-        table.setFillsViewportHeight(true);
-
-        table.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                    onEnterSelection();
-                    e.consume();
-                }
-            }
-        });
-
-        table.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mousePressed(MouseEvent e) {
-                if (e.getClickCount() == 2) {
-                    int r = table.rowAtPoint(e.getPoint());
-                    int c = table.columnAtPoint(e.getPoint());
-                    if (r >= 0 && c >= 0) {
-                        onEnterSelection((FileListItemContainer) table.getValueAt(r, c));
-                    }
-                }
-            }
-        });
-        /*
-		 * resize only lasty column
-		table.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
-		for (int i = tableModel.getColumnCount() - 1; i >= 0; i--) {
-			table.getColumnModel().getColumn(i).setMinWidth(128);
-			table.getColumnModel().getColumn(i).setMaxWidth(128);
-		}
-		table.getColumnModel().getColumn(tableModel.getColumnCount() - 1).setMaxWidth(Integer.MAX_VALUE);
-         */
-        JPanel filePanel = new JPanel(new BorderLayout());
-        JPanel roots = new JPanel();
-        for (File f : File.listRoots()) {//TODO refresh
-            final File fl = f;
-            final JButton btn = new JButton(fl.getAbsolutePath());
-            btn.addActionListener(e -> {enterDir(fl.toPath());});
-            roots.add(btn);
-        }
-        filePanel.add(roots, BorderLayout.NORTH);
-        filePanel.add(scrollPane, BorderLayout.CENTER);
-        filePanel.add(status, BorderLayout.SOUTH);
-        final JSplitPane mainPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,imagePreview, filePanel);
-        mainPane.setOneTouchExpandable(true);
-        setContentPane(mainPane);
-        mainPane.setDividerLocation(.4);
-
-        imagePreview.getViewButton().addActionListener(e -> {
-            int dl = mainPane.getDividerLocation();
-            int right = mainPane.getSize().width
-                             - mainPane.getInsets().right
-                             - mainPane.getDividerSize();
-
-            if (Math.abs(right - dl) < 10) {
-                Path fl = imagePreview.getFile();
-                if (fl != null) {
-                    table.clearSelection();
-                    RowCol rc = tableModel.findFileRowCol(fl);
-                    setSelection(rc);
-                }
-                mainPane.setDividerLocation(.4);
-            } else { 
-                mainPane.setDividerLocation(1.0);
-            }
-        });
-    }
-    
-    private void setSelection(RowCol rc) {
-        if (rc != null) {
-            int ci = table.convertColumnIndexToView(rc.col);
-            int ri = table.convertRowIndexToView(rc.row);
-            table.setColumnSelectionInterval(ci, ci);
-            table.setRowSelectionInterval(ri, ri);
-        }        
-    }
-    public static final ImageIcon DEFAULT_ICON
-            = ImageUtil.createImageIcon("/drawable/picture.png", MainFrame.class);
-    public static final ImageIcon NO_ICON
-            = ImageUtil.createImageIcon("/drawable/nopicture.png", MainFrame.class);
-
 }
