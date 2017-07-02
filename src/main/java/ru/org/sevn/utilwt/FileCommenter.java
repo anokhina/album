@@ -15,27 +15,9 @@
  *******************************************************************************/
 package ru.org.sevn.utilwt;
 
-import javax.swing.SwingConstants;
-import javax.swing.table.DefaultTableCellRenderer;
+import java.nio.file.Path;
 
-public class FileTableCellRenderer extends DefaultTableCellRenderer {
-
-    public FileTableCellRenderer() {
-        setHorizontalTextPosition(CENTER);
-        setVerticalTextPosition(BOTTOM);
-        setHorizontalAlignment(SwingConstants.CENTER);
-    }
-
-    protected void setValue(Object value) {
-        FileListItemContainer obj = (FileListItemContainer) value;
-        if (obj != null) {
-            setText(obj.getText());
-            setToolTipText(obj.getToolTipText());
-            setIcon(obj.getIcon());
-        } else {
-            setText(null);
-            setToolTipText(null);
-            setIcon(null);
-        }
-    }
+public interface FileCommenter {
+    String identifyComment(Path file);
+    boolean setComment(Path file, String text);
 }

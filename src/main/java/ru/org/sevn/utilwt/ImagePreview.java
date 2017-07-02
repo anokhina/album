@@ -22,8 +22,10 @@ import java.awt.Rectangle;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
@@ -48,7 +50,7 @@ import ru.org.sevn.utilwin.FileUtil;
 
 public class ImagePreview extends JPanel {
 
-    private File file;
+    private Path file;
     private ImageIcon previewImage = null;
     private ImageIcon imageIcon = null;
     private int previewWidth = PREVIEW_WIDTH;
@@ -75,11 +77,11 @@ public class ImagePreview extends JPanel {
     public static final double SCALE_MIN = SCALE_DELTA;
     public static final int SCALE_SLIDER = (int) (SCALE_MAX / SCALE_DELTA);
     private FileUtil tempFile;
-    private ImagemagickUtil imagemagickUtil;
+    private FileCommenter fileCommenter;
 
     private JSlider slider = new JSlider(JSlider.HORIZONTAL, 1, SCALE_SLIDER, (int) (1 / SCALE_DELTA));
 
-    public ImagePreview(File imageMagickPath) {
+    public ImagePreview(FileCommenter imageMagickPath) {
         this(imageMagickPath, PREVIEW_WIDTH, PREVIEW_HEIGHT);
     }
 
@@ -90,7 +92,7 @@ public class ImagePreview extends JPanel {
         return name;
     }
 
-    public ImagePreview(File imPath, int w, int h) {
+    public ImagePreview(FileCommenter imPath, int w, int h) {
         super(new BorderLayout());
         try {
             tempFile = new FileUtil();
@@ -98,12 +100,7 @@ public class ImagePreview extends JPanel {
             // TODO Auto-generated catch block
             e1.printStackTrace();
         }
-        try {
-            imagemagickUtil = new ImagemagickUtil(imPath);
-        } catch (IOException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-        }
+        fileCommenter = imPath;
         previewWidth = w;
         previewHeight = h;
         imageJComponent = new ImageJComponent();
@@ -138,10 +135,16 @@ public class ImagePreview extends JPanel {
             zoomOut();
         });
         openIn.addActionListener(e -> {
-            tempFile.runTemp(file);
+            try {
+                File f = file.toFile();
+                tempFile.runTemp(f);
+            } catch (Exception ex) {}
         });
         open.addActionListener(e -> {
-            FileUtil.openDefaultEditor(file);
+            try {
+                File f = file.toFile();
+                FileUtil.openDefaultEditor(f);
+            } catch (Exception ex) {}
         });
         prev.addActionListener(e -> {
             showPrev();
@@ -176,7 +179,7 @@ public class ImagePreview extends JPanel {
         add(controlsL, BorderLayout.WEST);
 
         JTabbedPane tabPane = new JTabbedPane();
-        tabPane.addTab("Image", null, imagePanel, "Image");
+        tabPane.addTab("Preview", null, imagePanel, "Preview");
         final JFXPanel fxPanel = new JFXPanel();
         tabPane.addTab("Comment", fxPanel);
 
@@ -200,7 +203,7 @@ public class ImagePreview extends JPanel {
             @Override
             public void handle(javafx.event.ActionEvent arg0) {
                 //System.err.println(htmlEditor.getHtmlText());
-                if (imagemagickUtil.setComment(file, htmlEditor.getHtmlText())) {
+                if (fileCommenter.setComment(file, htmlEditor.getHtmlText())) {
                     updateComment();
                 }
             }
@@ -270,17 +273,21 @@ public class ImagePreview extends JPanel {
         updateSlider();
     }
 
-    private File[] files2show;
+    private Path[] files2show;
     private int current;
 
-    public void setImageIconRepaint(ImageIcon ii, File fl) {
+    public void setImageIconRepaint(ImageIcon ii, Path fl) {
         current = -1;
         files2show = null;
         if (fl != null) {
-            File parentFile = fl.getParentFile();
+            Path parentFile = fl.getParent();
             if (parentFile != null) {
-                files2show = parentFile.listFiles();
-                Arrays.sort(files2show, new FileTableModel.FileNameComparator());
+                try {
+                    files2show = Files.list(parentFile).toArray(Path[]::new);
+                    Arrays.sort(files2show, new FileTableModel.FileNameComparator());
+                } catch (IOException ex) {
+                    Logger.getLogger(ImagePreview.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
             if (files2show != null && fl != null) {
                 for (int i = 0; i < files2show.length; i++) {
@@ -326,30 +333,30 @@ public class ImagePreview extends JPanel {
         }
     }
 
-    private String getContentType(File f) throws IOException {
+    private String getContentType(Path f) throws IOException {
         String contentType;// = Files.probeContentType(Paths.get(f.getPath()));
-        contentType = Mime.getMimeTypeFile(f.getName());
+        contentType = Mime.getMimeTypePath(f.getFileName());
         return contentType;
     }
     private ImageIcon showCurrent(int cur) {
         try {
             String contentType = getContentType(files2show[cur]);
             if (contentType != null && contentType.startsWith("image")) {
-                return new ImageIcon(files2show[cur].getPath());
+                return new ImageIcon(Files.readAllBytes(files2show[cur]));
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return null;
     }
 
-    private void displayImageIconRepaint(ImageIcon i, File fl) {
+    private void displayImageIconRepaint(ImageIcon i, Path fl) {
         setImageIcon(i);
         file = fl;
         label.setText("");
         if (file != null) {
-            label.setText(fl.getAbsolutePath());
+            label.setText(fl.toAbsolutePath().toString());
         }
         updateComment();
         repaint();
@@ -368,8 +375,8 @@ public class ImagePreview extends JPanel {
         setNewHtmlText("");
         if (file != null && imageIcon != null) {
             String appTxt = null;
-            if (imagemagickUtil != null) {
-                appTxt = imagemagickUtil.identifyComment(file);
+            if (fileCommenter != null) {
+                appTxt = fileCommenter.identifyComment(file);
             }
             if (appTxt == null) {
                 appTxt = "";
@@ -475,7 +482,7 @@ public class ImagePreview extends JPanel {
         return viewButton;
     }
 
-    public File getFile() {
+    public Path getFile() {
         return file;
     }
 

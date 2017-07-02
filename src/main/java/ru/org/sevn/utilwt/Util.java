@@ -16,6 +16,7 @@
 package ru.org.sevn.utilwt;
 
 import java.io.PrintStream;
+import java.nio.file.Path;
 import java.util.Date;
 
 public class Util {
@@ -24,5 +25,10 @@ public class Util {
     	ps.println(prefix+(d2.getTime() - d1.getTime()));
     	return new Date();
     }
-
+    public static String getFileName(Path f) {
+        if (f != null) {
+            return f.toString();
+        }
+        return null;
+    }
 }

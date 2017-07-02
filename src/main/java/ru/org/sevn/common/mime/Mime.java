@@ -16,6 +16,9 @@
 package ru.org.sevn.common.mime;
 
 //https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Complete_list_of_MIME_types
+
+import java.nio.file.Path;
+
 public class Mime {
 
     /*
@@ -83,6 +86,12 @@ audio/3gpp2 if it doesn't contain video
     
     */
     
+    public static String getMimeTypePath(Path fname) {
+        if (fname != null) {
+            return getMimeTypeFile(fname.toString());
+        }
+        return null;
+    }
     public static String getMimeTypeFile(String fname) {
         int extIdx = fname.lastIndexOf(".");
         if (extIdx > 0) {

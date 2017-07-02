@@ -1,4 +1,4 @@
-/*******************************************************************************
+/** *****************************************************************************
  * Copyright 2017 Veronica Anokhina.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,7 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *******************************************************************************/
+ ****************************************************************************** */
 package ru.org.sevn.utilwt;
 
 import java.io.BufferedReader;
@@ -22,10 +22,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
+import java.nio.file.Path;
 import java.util.StringJoiner;
 
-public class ImagemagickUtil {
-	/*
+public class ImagemagickUtil implements FileCommenter {
+
+    /*
 \n	newline
 \r	carriage return
 <	less-than character.
@@ -73,84 +75,103 @@ public class ImagemagickUtil {
 %Z	unique filename (used for delegates)
 %@	CALCULATED: trim bounding box (without actually trimming)
 %#	CALCULATED: 'signature' hash of image values	 * 
-	 */
-	//http://www.imagemagick.org/Usage/text/
-	//http://www.imagemagick.org/script/command-line-options.php#comment
-	// see https://svn.apache.org/repos/asf/commons/proper/imaging/trunk/src/test/java/org/apache/commons/imaging/examples/MetadataExample.java
-	//identify -verbose commentedPciture.png |grep comment
-	//convert image -set comment "sometext" image
-	//convert image -format "%c" info:
-	//identify -format "%c" image
-	//http://www.imagemagick.org/script/escape.php
-	
-	private final String IDENTIFY;
-	private final String CONVERT;
-	
-	public String identifyComment(File file) {
-		String ret = null;
-		ProcessBuilder pb = new ProcessBuilder(IDENTIFY, "-format", "%c", file.getAbsolutePath());
-		//pb.redirectErrorStream(true);
-		try {
-			Process p = pb.start();
-	        final BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream() , charset));
-	        StringJoiner sj = new StringJoiner(System.getProperty("line.separator"));
-	        reader.lines().iterator().forEachRemaining(sj::add);
-	        ret = sj.toString();
-	        
-			p.waitFor();
-			//p.destroy();
-		} catch (IOException | InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return ret;
-	}
+     */
+    //http://www.imagemagick.org/Usage/text/
+    //http://www.imagemagick.org/script/command-line-options.php#comment
+    // see https://svn.apache.org/repos/asf/commons/proper/imaging/trunk/src/test/java/org/apache/commons/imaging/examples/MetadataExample.java
+    //identify -verbose commentedPciture.png |grep comment
+    //convert image -set comment "sometext" image
+    //convert image -format "%c" info:
+    //identify -format "%c" image
+    //http://www.imagemagick.org/script/escape.php
 
-	public final static String UTF8 =  "UTF-8";
-	public final static String UTF16 =  "UTF-16";
-	public final static String CP866 =  "cp866";
-	public final static String CP1251 =  "cp1251";
-	public final static String ISO =  "iso-8859-1";
-	//iso-8859-1
-	
-	private File tempFile;
-	private Charset charset;
+    private final String IDENTIFY;
+    private final String CONVERT;
 
-	public ImagemagickUtil(File imPath) throws IOException {
-		this(imPath, CP1251);
-	}
-	public ImagemagickUtil(File imPath, String outEncoding) throws IOException {
-		this(imPath, Charset.forName(outEncoding));
-	}
-	public ImagemagickUtil(File imPath, Charset charset) throws IOException {
-		this.charset = charset;
-		IDENTIFY = new File(imPath, "identify.exe").getAbsolutePath();
-		CONVERT = new File(imPath, "convert.exe").getAbsolutePath();
-		tempFile = File.createTempFile(ImagemagickUtil.class.getCanonicalName().replace(".", "_"), ".txt");
-		//System.err.println("?????????????????>"+tempFile.getAbsolutePath());
-		tempFile.deleteOnExit();
-	}
-	private void updateTemp(String text) throws IOException {
-		OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(tempFile), charset);
-		osw.write(text);
-		osw.close();
-	}
-	
-	public boolean setComment(File file, String text) {
-		//convert.exe C:\pub\20140906_145606_1.jpg -set comment @zzz1.txt C:\pub\20140906_145606_1.jpg 
-		if (file != null && text != null) {
-			try {
-				updateTemp(text);
-				ProcessBuilder pb = new ProcessBuilder(CONVERT, file.getAbsolutePath(), "-set", "comment", "@"+tempFile.getAbsolutePath(), file.getAbsolutePath());
-				Process p = pb.start();
-				p.waitFor();
-				return true;
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-		return false;
-	}
-	
+    public String identifyComment(File file) {
+        String ret = null;
+        ProcessBuilder pb = new ProcessBuilder(IDENTIFY, "-format", "%c", file.getAbsolutePath());
+        //pb.redirectErrorStream(true);
+        try {
+            Process p = pb.start();
+            final BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream(), charset));
+            StringJoiner sj = new StringJoiner(System.getProperty("line.separator"));
+            reader.lines().iterator().forEachRemaining(sj::add);
+            ret = sj.toString();
+
+            p.waitFor();
+            //p.destroy();
+        } catch (IOException | InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return ret;
+    }
+
+    public final static String UTF8 = "UTF-8";
+    public final static String UTF16 = "UTF-16";
+    public final static String CP866 = "cp866";
+    public final static String CP1251 = "cp1251";
+    public final static String ISO = "iso-8859-1";
+    //iso-8859-1
+
+    private File tempFile;
+    private Charset charset;
+
+    public ImagemagickUtil(File imPath) throws IOException {
+        this(imPath, CP1251);
+    }
+
+    public ImagemagickUtil(File imPath, String outEncoding) throws IOException {
+        this(imPath, Charset.forName(outEncoding));
+    }
+
+    public ImagemagickUtil(File imPath, Charset charset) throws IOException {
+        this.charset = charset;
+        IDENTIFY = new File(imPath, "identify.exe").getAbsolutePath();
+        CONVERT = new File(imPath, "convert.exe").getAbsolutePath();
+        tempFile = File.createTempFile(ImagemagickUtil.class.getCanonicalName().replace(".", "_"), ".txt");
+        //System.err.println("?????????????????>"+tempFile.getAbsolutePath());
+        tempFile.deleteOnExit();
+    }
+
+    private void updateTemp(String text) throws IOException {
+        OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(tempFile), charset);
+        osw.write(text);
+        osw.close();
+    }
+
+    public boolean setComment(File file, String text) {
+        //convert.exe C:\pub\20140906_145606_1.jpg -set comment @zzz1.txt C:\pub\20140906_145606_1.jpg 
+        if (file != null && text != null) {
+            try {
+                updateTemp(text);
+                ProcessBuilder pb = new ProcessBuilder(CONVERT, file.getAbsolutePath(), "-set", "comment", "@" + tempFile.getAbsolutePath(), file.getAbsolutePath());
+                Process p = pb.start();
+                p.waitFor();
+                return true;
+            } catch (Exception e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public String identifyComment(Path file) {
+        try {
+            return identifyComment(file.toFile());
+        } catch (UnsupportedOperationException e) {}
+        return null;
+    }
+
+    @Override
+    public boolean setComment(Path file, String text) {
+        try {
+            return setComment(file.toFile(), text);
+        } catch (UnsupportedOperationException e) {}
+        return false;
+    }
+
 }

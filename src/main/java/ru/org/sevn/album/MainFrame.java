@@ -133,7 +133,7 @@ public class MainFrame extends JFrame {
                 if (e.getClickCount() == 2) {
                     if (fval != null) {
                         System.out.println("-----------?-" + fval.getToolTipText());
-                        if (fval.getFile() != null && fval.getFile().isDirectory()) {
+                        if (fval.getFile() == null || fval.getFile() != null && fval.getFile().isDirectory()) {
                             tableModel.setCurrentDir(fval.getFile());
                             tableModel.fireTableDataChanged();
                         }

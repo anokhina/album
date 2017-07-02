@@ -13,29 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
-package ru.org.sevn.utilwt;
+package ru.org.sevn.fsbrowser;
 
-import javax.swing.SwingConstants;
-import javax.swing.table.DefaultTableCellRenderer;
+import ru.org.sevn.utilwt.FakeFileCommenter;
 
-public class FileTableCellRenderer extends DefaultTableCellRenderer {
+public class AppFSBrowser {
+    public static void main( String[] args ) throws Exception {
 
-    public FileTableCellRenderer() {
-        setHorizontalTextPosition(CENTER);
-        setVerticalTextPosition(BOTTOM);
-        setHorizontalAlignment(SwingConstants.CENTER);
-    }
-
-    protected void setValue(Object value) {
-        FileListItemContainer obj = (FileListItemContainer) value;
-        if (obj != null) {
-            setText(obj.getText());
-            setToolTipText(obj.getToolTipText());
-            setIcon(obj.getIcon());
-        } else {
-            setText(null);
-            setToolTipText(null);
-            setIcon(null);
-        }
+        MainFrame.runMain(new FakeFileCommenter());
     }
 }
