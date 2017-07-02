@@ -3,11 +3,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>ru.org.sevn</groupId>
-  <artifactId>album</artifactId>
+  <artifactId>fsbrowser</artifactId>
   <version>${maven.build.timestamp}</version>
   <packaging>jar</packaging>
 
-  <name>album</name>
+  <name>fsbrowser</name>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -43,7 +43,7 @@
       <archive>
         <manifest>
           <addClasspath>true</addClasspath>
-          <mainClass>ru.org.sevn.album.AppAlbum</mainClass>
+          <mainClass>ru.org.sevn.fsbrowser.AppFSBrowser</mainClass>
         </manifest>
       </archive>
       <descriptorRefs>
