@@ -25,11 +25,14 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
@@ -204,6 +207,16 @@ public class FilePane extends JSplitPane {
          */
         JPanel filePanel = new JPanel(new BorderLayout());
         JPanel roots = new JPanel();
+        JButton btndel = new JButton("Del");
+        btndel.addActionListener(e -> {
+            deleteSelected();
+        });
+        roots.add(btndel);
+        JButton btncopy = new JButton("Copy");
+        btncopy.addActionListener(e -> {
+            copySelected();
+        });
+        roots.add(btncopy);
         for (File f : File.listRoots()) {//TODO refresh
             final File fl = f;
             final JButton btn = new JButton(fl.getAbsolutePath());
@@ -237,5 +250,67 @@ public class FilePane extends JSplitPane {
                 mainPane.setDividerLocation(1.0);
             }
         });
+    }
+
+    private ArrayList<FileListItemContainer> getSelectedFiles() {
+        FileTableModel tableModel = (FileTableModel)table.getModel();
+        Path curDir = tableModel.getCurrentDir();
+        Path parDir = curDir.getParent().toAbsolutePath();
+        ArrayList<FileListItemContainer> files = new ArrayList<>();
+        Arrays.stream(table.getSelectedRows()).forEach(r -> {
+            Arrays.stream(table.getSelectedColumns()).forEach(c -> {
+                // TODO dont add parent
+                FileListItemContainer fval = (FileListItemContainer) table.getValueAt(r, c);
+                if (fval.getFile() != null && !parDir.equals(fval.getFile().toAbsolutePath())) {
+                    files.add(fval);
+                }
+            });
+        });
+        return files;        
+    }
+    private void deleteSelected() {
+        //ask
+        FileTableModel tableModel = (FileTableModel)table.getModel();
+        ArrayList<FileListItemContainer> files = getSelectedFiles();
+        
+        int n = JOptionPane.showConfirmDialog(
+            this,
+            "Delete " + files.size() + " selected files?",
+            "Delete",
+            JOptionPane.YES_NO_OPTION);
+        if (n == JOptionPane.YES_OPTION) {
+            //delete
+            //refresh
+            enterDir(tableModel.getCurrentDir());
+        }
+
+    }
+    private FilePane sibling;
+    public void setSibling(FilePane fp) {
+        sibling = fp;
+    }
+    private void copySelected() {
+        //ask
+        if (sibling != null) {
+            FileTableModel tableModel = (FileTableModel)table.getModel();
+            ArrayList<FileListItemContainer> files = getSelectedFiles();
+            FileTableModel stableModel = (FileTableModel)sibling.table.getModel();
+            Path toPath = stableModel.getCurrentDir();
+            if (toPath != null) {
+                String toName = toPath.toUri().toString();
+                int n = JOptionPane.showConfirmDialog(
+                    this,
+                        toName + "\n" +
+                    "Copy " + files.size() + " selected files?",
+                    "Copy to ",
+                    JOptionPane.YES_NO_OPTION);
+                if (n == JOptionPane.YES_OPTION) {
+                    //copy
+                    //check not the same
+                    //refresh
+                    sibling.enterDir(tableModel.getCurrentDir());
+                }
+            }
+        }
     }
 }

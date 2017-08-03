@@ -65,6 +65,9 @@ public class FileTableModel extends AbstractTableModel {
         }
         return null;
     }
+    public Path getCurrentDir() {
+        return currentDir;
+    }
     public void setCurrentDir(Path file) {
         if (file != null && !Files.isDirectory(file)) {
             throw new IllegalArgumentException("" + file.toAbsolutePath() + " isn't directory");

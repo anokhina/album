@@ -50,13 +50,16 @@ public class MainFrame extends JFrame {
         });
         leftPane = new FilePane(commenter);
         rightPane = new FilePane(commenter);
+        leftPane.setSibling(rightPane);
+        rightPane.setSibling(leftPane);
         final JSplitPane mainPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,leftPane, rightPane);
         mainPane.setOneTouchExpandable(true);
         setContentPane(mainPane);
         mainPane.setDividerLocation(.5);
         
         setContentPane(mainPane);
-        //createFileTable(commenter);
+        //copy from to
+        //delete
         //main folder button
         //folder list
         //full screen
